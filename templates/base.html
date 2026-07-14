@@ -40,6 +40,10 @@
                     <i class="ti ti-chart-pie"></i>
                     <span>Budgets</span>
                 </a>
+                <a href="{% url 'calendar:index' %}" class="nav-item {% if request.resolver_match.app_name == 'calendar' %}active{% endif %}">
+                    <i class="ti ti-calendar"></i>
+                    <span>Calendar</span>
+                </a>
                 <a href="{% url 'reports:index' %}" class="nav-item {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
                     <i class="ti ti-chart-bar"></i>
                     <span>Reports</span>
@@ -96,6 +100,10 @@
             <a href="{% url 'budgets:list' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'budgets' %}active{% endif %}">
                 <i class="ti ti-chart-pie"></i>
                 <span>Budgets</span>
+            </a>
+            <a href="{% url 'calendar:index' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'calendar' %}active{% endif %}">
+                <i class="ti ti-calendar"></i>
+                <span>Calendar</span>
             </a>
             <a href="{% url 'reports:index' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
                 <i class="ti ti-chart-bar"></i>

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'income',
     'expenses',
     'budgets',
+    'calendar_view',
     'dashboard',
     'reports',
     'api',

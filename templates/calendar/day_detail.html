@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ date|date:"F j, Y" }} - Calendar - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+    <div class="topbar">
+        <div>
+            <h1>{{ date|date:"F j, Y" }}</h1>
+            <p>Transactions for this day.</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="{% url 'calendar:index' %}?year={{ year }}&month={{ month }}" class="btn">
+                <i class="ti ti-arrow-left"></i>
+                Back to calendar
+            </a>
+        </div>
+    </div>
+
+    <!-- Day Summary -->
+    <div class="metrics">
+        <div class="metric income">
+            <div class="metric-label">
+                <i class="ti ti-arrow-down-left"></i>
+                Income
+            </div>
+            <div class="metric-value">
+                {% if incomes %}
+                KES {{ incomes.0.amount|floatformat:0 }}
+                {% else %}
+                KES 0
+                {% endif %}
+            </div>
+        </div>
+        <div class="metric expense">
+            <div class="metric-label">
+                <i class="ti ti-arrow-up-right"></i>
+                Expenses
+            </div>
+            <div class="metric-value">
+                {% if expenses %}
+                KES {{ expenses.0.amount|floatformat:0 }}
+                {% else %}
+                KES 0
+                {% endif %}
+            </div>
+        </div>
+        <div class="metric balance">
+            <div class="metric-label">
+                <i class="ti ti-scale"></i>
+                Net
+            </div>
+            <div class="metric-value">KES 0</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- Income -->
+        <div class="card">
+            <div class="card-title">
+                <span><i class="ti ti-arrow-down-left" style="color: var(--income);"></i> Income</span>
+            </div>
+            {% if incomes %}
+            {% for income in incomes %}
+            <div class="transaction-row">
+                <div class="transaction-left">
+                    <div class="transaction-icon income">
+                        <i class="ti {{ income.category.icon }}"></i>
+                    </div>
+                    <div>
+                        <div class="transaction-desc">{{ income.description }}</div>
+                        <div class="transaction-meta">{{ income.category.name }}</div>
+                    </div>
+                </div>
+                <div class="transaction-amount income">+KES {{ income.amount|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-arrow-down-left"></i>
+                <p>No income recorded</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Expenses -->
+        <div class="card">
+            <div class="card-title">
+                <span><i class="ti ti-arrow-up-right" style="color: var(--expense);"></i> Expenses</span>
+            </div>
+            {% if expenses %}
+            {% for expense in expenses %}
+            <div class="transaction-row">
+                <div class="transaction-left">
+                    <div class="transaction-icon expense">
+                        <i class="ti {{ expense.category.icon }}"></i>
+                    </div>
+                    <div>
+                        <div class="transaction-desc">{{ expense.description }}</div>
+                        <div class="transaction-meta">{{ expense.category.name }}</div>
+                    </div>
+                </div>
+                <div class="transaction-amount expense">-KES {{ expense.amount|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-arrow-up-right"></i>
+                <p>No expenses recorded</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Calendar - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-page">
+    <div class="topbar">
+        <div>
+            <h1>Calendar</h1>
+            <p>Visual overview of your transactions by date.</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="{% url 'income:create' %}" class="btn btn-primary">
+                <i class="ti ti-plus"></i>
+                Add income
+            </a>
+            <a href="{% url 'expenses:create' %}" class="btn btn-primary">
+                <i class="ti ti-plus"></i>
+                Add expense
+            </a>
+        </div>
+    </div>
+
+    <!-- Month Summary -->
+    <div class="metrics">
+        <div class="metric income">
+            <div class="metric-label">
+                <i class="ti ti-arrow-down-left"></i>
+                Income this month
+            </div>
+            <div class="metric-value">KES {{ month_income|floatformat:0 }}</div>
+        </div>
+        <div class="metric expense">
+            <div class="metric-label">
+                <i class="ti ti-arrow-up-right"></i>
+                Expenses this month
+            </div>
+            <div class="metric-value">KES {{ month_expense|floatformat:0 }}</div>
+        </div>
+        <div class="metric balance">
+            <div class="metric-label">
+                <i class="ti ti-scale"></i>
+                Net
+            </div>
+            <div class="metric-value">KES {{ month_income|add:month_expense|floatformat:0 }}</div>
+        </div>
+    </div>
+
+    <!-- Calendar Navigation -->
+    <div class="calendar-card card">
+        <div class="calendar-header">
+            <a href="?year={% if month == 1 %}{{ year|add:"-1" }}{% else %}{{ year }}{% endif %}&month={% if month == 1 %}12{% else %}{{ month|add:"-1" }}{% endif %}" class="cal-nav-btn">
+                <i class="ti ti-chevron-left"></i>
+            </a>
+            <h2 class="cal-month-title">{{ month_name }} {{ year }}</h2>
+            <a href="?year={% if month == 12 %}{{ year|add:"1" }}{% else %}{{ year }}{% endif %}&month={% if month == 12 %}1{% else %}{{ month|add:"1" }}{% endif %}" class="cal-nav-btn">
+                <i class="ti ti-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- Legend -->
+        <div class="cal-legend">
+            <span class="legend-item"><span class="legend-dot income"></span> Income</span>
+            <span class="legend-item"><span class="legend-dot expense"></span> Expense</span>
+            <span class="legend-item"><span class="legend-dot both"></span> Both</span>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="cal-grid">
+            <div class="cal-day-header">Mon</div>
+            <div class="cal-day-header">Tue</div>
+            <div class="cal-day-header">Wed</div>
+            <div class="cal-day-header">Thu</div>
+            <div class="cal-day-header">Fri</div>
+            <div class="cal-day-header">Sat</div>
+            <div class="cal-day-header">Sun</div>
+
+            <!-- Empty cells before first day -->
+            {% for _ in ""|ljust:first_day %}
+            <div class="cal-cell empty"></div>
+            {% endfor %}
+
+            {% for cell in cal_days %}
+            <a href="{% url 'calendar:day_detail' year month cell.day %}" class="cal-cell {% if cell.is_today %}today{% endif %} {% if cell.has_both %}has-both{% elif cell.has_income %}has-income{% elif cell.has_expense %}has-expense{% endif %}">
+                <span class="cal-day-num">{{ cell.day }}</span>
+                {% if cell.has_income %}
+                <span class="cal-indicator income" title="Income: KES {{ cell.income|floatformat:0 }}"></span>
+                {% endif %}
+                {% if cell.has_expense %}
+                <span class="cal-indicator expense" title="Expense: KES {{ cell.expense|floatformat:0 }}"></span>
+                {% endif %}
+                {% if cell.income > 0 %}
+                <span class="cal-amount income">+{{ cell.income|floatformat:0 }}</span>
+                {% endif %}
+                {% if cell.expense > 0 %}
+                <span class="cal-amount expense">-{{ cell.expense|floatformat:0 }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+
+            <!-- Fill remaining cells -->
+            {% for _ in ""|ljust:cal_days|length %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
