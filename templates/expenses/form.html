@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title }} - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/income.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>{{ title }}</h1>
+            <p>{% if form.instance.pk %}Update expense entry{% else %}Record a new expense{% endif %}</p>
+        </div>
+        <a href="{% url 'expenses:list' %}" class="btn">
+            <i class="ti ti-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="card" style="max-width: 500px;">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_category">Category</label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                <div class="field-error">{{ form.category.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_amount">Amount (KES)</label>
+                {{ form.amount }}
+                {% if form.amount.errors %}
+                <div class="field-error">{{ form.amount.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_description">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="field-error">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_date">Date</label>
+                {{ form.date }}
+                {% if form.date.errors %}
+                <div class="field-error">{{ form.date.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-check"></i>
+                    {% if form.instance.pk %}Update{% else %}Add{% endif %} expense
+                </button>
+                <a href="{% url 'expenses:list' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

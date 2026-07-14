@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Expense Categories - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/income.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>Expense Categories</h1>
+            <p>Manage your expense categories.</p>
+        </div>
+        <a href="{% url 'expenses:list' %}" class="btn">
+            <i class="ti ti-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="grid-2">
+        <!-- Category List -->
+        <div class="card">
+            <div class="card-title">Categories</div>
+            {% if categories %}
+            <div class="category-grid">
+                {% for cat in categories %}
+                <div class="category-card">
+                    <div class="category-icon" style="background: {{ cat.color }}20; color: {{ cat.color }}">
+                        <i class="ti {{ cat.icon }}"></i>
+                    </div>
+                    <div class="category-info">
+                        <div class="category-name">{{ cat.name }}</div>
+                    </div>
+                    <div class="category-actions">
+                        <a href="{% url 'expenses:category_edit' cat.pk %}" class="btn btn-ghost btn-sm">
+                            <i class="ti ti-edit"></i>
+                        </a>
+                        <a href="{% url 'expenses:category_delete' cat.pk %}" class="btn btn-ghost btn-sm btn-danger">
+                            <i class="ti ti-trash"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-tag"></i>
+                <p>No categories yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Add Category Form -->
+        <div class="card">
+            <div class="card-title">Add category</div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_name">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <div class="field-error">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_color">Color</label>
+                    {{ form.color }}
+                </div>
+                <div class="form-group">
+                    <label for="id_icon">Icon</label>
+                    {{ form.icon }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-plus"></i>
+                    Add category
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

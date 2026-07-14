@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Environment
+.env
+.env.*
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Django
+staticfiles/
+media/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test scripts
+scripts/test_*.py
+scripts/debug_*.py
+cookies.txt

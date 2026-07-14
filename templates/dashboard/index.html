@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="topbar">
+        <div>
+            <h1>Dashboard</h1>
+            <p>A snapshot of your income, spending and balance.</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="{% url 'income:create' %}" class="btn btn-primary">
+                <i class="ti ti-plus"></i>
+                Add income
+            </a>
+            <a href="{% url 'expenses:create' %}" class="btn btn-primary">
+                <i class="ti ti-plus"></i>
+                Add expense
+            </a>
+        </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+        <div class="metric income">
+            <div class="metric-label">
+                <i class="ti ti-arrow-down-left"></i>
+                Total income
+            </div>
+            <div class="metric-value">KES {{ month_income|floatformat:0 }}</div>
+        </div>
+        <div class="metric expense">
+            <div class="metric-label">
+                <i class="ti ti-arrow-up-right"></i>
+                Total expenses
+            </div>
+            <div class="metric-value">KES {{ month_expenses|floatformat:0 }}</div>
+        </div>
+        <div class="metric balance">
+            <div class="metric-label">
+                <i class="ti ti-scale"></i>
+                Current balance
+            </div>
+            <div class="metric-value">KES {{ balance|floatformat:0 }}</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- Category Summary -->
+        <div class="card">
+            <div class="card-title">
+                Spending by category
+                <span class="hint">Top 5, current month</span>
+            </div>
+            {% if categories %}
+            {% for cat in categories %}
+            <div class="cat-bar-row">
+                <div class="cat-bar-top">
+                    <span class="cat-name">
+                        <span class="cat-dot" style="background: {{ cat.color }}"></span>
+                        {{ cat.name }}
+                    </span>
+                    <span class="cat-amt">KES {{ cat.total|floatformat:0 }}</span>
+                </div>
+                <div class="cat-bar-track">
+                    <div class="cat-bar-fill" style="width: {{ cat.percentage }}%; background: {{ cat.color }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-chart-donut"></i>
+                <p>No expenses recorded yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-title">Quick actions</div>
+            <div class="quick-actions">
+                <a href="{% url 'income:create' %}" class="quick-action-btn income">
+                    <i class="ti ti-arrow-down-left"></i>
+                    <span>Add Income</span>
+                </a>
+                <a href="{% url 'expenses:create' %}" class="quick-action-btn expense">
+                    <i class="ti ti-arrow-up-right"></i>
+                    <span>Add Expense</span>
+                </a>
+                <a href="{% url 'budgets:create' %}" class="quick-action-btn budget">
+                    <i class="ti ti-chart-pie"></i>
+                    <span>Set Budget</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Status -->
+    {% if budgets %}
+    <div class="card" style="margin-bottom: 14px;">
+        <div class="card-title">
+            Budget status
+            <a href="{% url 'budgets:list' %}" class="hint" style="cursor: pointer; text-decoration: none;">See all →</a>
+        </div>
+        {% for budget in budgets %}
+        <div class="budget-row">
+            <div class="budget-info">
+                <span class="budget-cat">
+                    <span class="cat-dot" style="background: {{ budget.category.color }}"></span>
+                    {{ budget.category.name }}
+                </span>
+                <span class="budget-amounts">
+                    <span class="amount-expense">KES {{ budget.spent|floatformat:0 }}</span>
+                    <span class="budget-separator">/</span>
+                    <span class="budget-limit">KES {{ budget.amount|floatformat:0 }}</span>
+                </span>
+            </div>
+            <div class="budget-bar-track">
+                <div class="budget-bar-fill {% if budget.percentage >= 100 %}over{% elif budget.percentage >= 80 %}warning{% endif %}"
+                     style="width: {{ budget.percentage }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Charts Row 1 -->
+    <div class="grid-2">
+        <!-- Monthly Trend Chart -->
+        <div class="card">
+            <div class="card-title">Income vs Expenses</div>
+            <canvas id="trendChart" height="200"></canvas>
+        </div>
+
+        <!-- Monthly Spending Line Chart -->
+        <div class="card">
+            <div class="card-title">Monthly spending</div>
+            <canvas id="spendingChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid-2">
+        <!-- Expense Category Pie Chart -->
+        <div class="card">
+            <div class="card-title">Expense breakdown</div>
+            {% if pie_data %}
+            <canvas id="pieChart" height="200"></canvas>
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-chart-donut"></i>
+                <p>No expenses to chart</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Budget Usage Chart -->
+        <div class="card">
+            <div class="card-title">Budget usage</div>
+            {% if budgets %}
+            <canvas id="budgetChart" height="200"></canvas>
+            {% else %}
+            <div class="empty-state">
+                <i class="ti ti-chart-pie"></i>
+                <p>No budgets set this month</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-title">Recent transactions</div>
+        {% if recent_incomes or recent_expenses %}
+        {% for income in recent_incomes %}
+        <div class="transaction-row">
+            <div class="transaction-left">
+                <div class="transaction-icon income">
+                    <i class="ti {{ income.category.icon }}"></i>
+                </div>
+                <div>
+                    <div class="transaction-desc">{{ income.description }}</div>
+                    <div class="transaction-meta">{{ income.category.name }} · {{ income.date|date:"M d" }}</div>
+                </div>
+            </div>
+            <div class="transaction-amount income">+KES {{ income.amount|floatformat:0 }}</div>
+        </div>
+        {% endfor %}
+        {% for expense in recent_expenses %}
+        <div class="transaction-row">
+            <div class="transaction-left">
+                <div class="transaction-icon expense">
+                    <i class="ti {{ expense.category.icon }}"></i>
+                </div>
+                <div>
+                    <div class="transaction-desc">{{ expense.description }}</div>
+                    <div class="transaction-meta">{{ expense.category.name }} · {{ expense.date|date:"M d" }}</div>
+                </div>
+            </div>
+            <div class="transaction-amount expense">-KES {{ expense.amount|floatformat:0 }}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="ti ti-receipt-2"></i>
+            <p>No transactions yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_months|safe }},
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: {{ chart_income|safe }},
+                        backgroundColor: 'rgba(29, 135, 99, 0.8)',
+                        borderColor: '#1D8763',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Expenses',
+                        data: {{ chart_expenses|safe }},
+                        backgroundColor: 'rgba(194, 72, 63, 0.8)',
+                        borderColor: '#C2483F',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16 } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+
+    const pieCtx = document.getElementById('pieChart');
+    if (pieCtx) {
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ pie_labels|safe }},
+                datasets: [{
+                    data: {{ pie_data|safe }},
+                    backgroundColor: {{ pie_colors|safe }},
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+                }
+            }
+        });
+    }
+
+    // Monthly Spending Line Chart
+    const spendingCtx = document.getElementById('spendingChart');
+    if (spendingCtx) {
+        new Chart(spendingCtx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_months|safe }},
+                datasets: [{
+                    label: 'Expenses',
+                    data: {{ chart_expenses|safe }},
+                    borderColor: '#C2483F',
+                    backgroundColor: 'rgba(194, 72, 63, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#C2483F',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+                }
+            }
+        });
+    }
+
+    // Budget Usage Chart
+    const budgetCtx = document.getElementById('budgetChart');
+    if (budgetCtx) {
+        new Chart(budgetCtx, {
+            type: 'polarArea',
+            data: {
+                labels: [{% for b in budgets %}'{{ b.category.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for b in budgets %}{{ b.percentage }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: [
+                        {% for b in budgets %}'{{ b.category.color }}80'{% if not forloop.last %},{% endif %}{% endfor %}
+                    ],
+                    borderColor: [
+                        {% for b in budgets %}'{{ b.category.color }}'{% if not forloop.last %},{% endif %}{% endfor %}
+                    ],
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { display: false },
+                        grid: { color: 'rgba(0,0,0,0.08)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var spent = Math.round(ctx.raw);
+                                return ctx.label + ': ' + spent + '% used';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

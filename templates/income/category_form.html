@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Category - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/income.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>Edit Category</h1>
+            <p>Update "{{ category.name }}"</p>
+        </div>
+        <a href="{% url 'income:categories' %}" class="btn">
+            <i class="ti ti-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    <div class="card" style="max-width: 400px;">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_name">Name</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="id_color">Color</label>
+                {{ form.color }}
+            </div>
+            <div class="form-group">
+                <label for="id_icon">Icon</label>
+                {{ form.icon }}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-check"></i>
+                    Update
+                </button>
+                <a href="{% url 'income:categories' %}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

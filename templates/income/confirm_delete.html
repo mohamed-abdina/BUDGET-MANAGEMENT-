@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Delete - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/income.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <div class="card" style="max-width: 400px; margin-top: 40px;">
+        <div class="empty-state">
+            <i class="ti ti-alert-triangle" style="color: var(--expense)"></i>
+            <p><strong>Are you sure?</strong></p>
+            <p>This action cannot be undone.</p>
+        </div>
+        <div class="form-actions" style="justify-content: center;">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="ti ti-trash"></i>
+                    Delete
+                </button>
+            </form>
+            <a href="{% url 'income:list' %}" class="btn">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

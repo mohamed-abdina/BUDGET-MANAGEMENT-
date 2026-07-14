@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ledgerline{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon"><i class="ti ti-wallet"></i></div>
+                <span class="brand-name">Ledgerline</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard:index' %}" class="nav-item {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                    <i class="ti ti-layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'income:list' %}" class="nav-item {% if request.resolver_match.app_name == 'income' %}active{% endif %}">
+                    <i class="ti ti-arrow-down-left"></i>
+                    <span>Income</span>
+                </a>
+                <a href="{% url 'expenses:list' %}" class="nav-item {% if request.resolver_match.app_name == 'expenses' %}active{% endif %}">
+                    <i class="ti ti-arrow-up-right"></i>
+                    <span>Expenses</span>
+                </a>
+                <a href="{% url 'budgets:list' %}" class="nav-item {% if request.resolver_match.app_name == 'budgets' %}active{% endif %}">
+                    <i class="ti ti-chart-pie"></i>
+                    <span>Budgets</span>
+                </a>
+                <a href="{% url 'reports:index' %}" class="nav-item {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+                    <i class="ti ti-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="{% url 'accounts:profile' %}" class="nav-item {% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="ti ti-user"></i>
+                    <span>Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="ti ti-moon"></i>
+                </button>
+                <div class="user-chip">
+                    <div class="user-avatar">{{ user.first_name.0|default:user.email.0|upper }}</div>
+                    <span class="user-name">{{ user.first_name|default:user.email }}</span>
+                </div>
+                <a href="{% url 'accounts:logout' %}" class="nav-item logout-btn">
+                    <i class="ti ti-logout"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                    <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <nav class="mobile-nav">
+            <a href="{% url 'dashboard:index' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                <i class="ti ti-layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'income:list' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'income' %}active{% endif %}">
+                <i class="ti ti-arrow-down-left"></i>
+                <span>Income</span>
+            </a>
+            <a href="{% url 'expenses:list' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'expenses' %}active{% endif %}">
+                <i class="ti ti-arrow-up-right"></i>
+                <span>Expenses</span>
+            </a>
+            <a href="{% url 'budgets:list' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'budgets' %}active{% endif %}">
+                <i class="ti ti-chart-pie"></i>
+                <span>Budgets</span>
+            </a>
+            <a href="{% url 'reports:index' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+                <i class="ti ti-chart-bar"></i>
+                <span>Reports</span>
+            </a>
+            <a href="{% url 'accounts:profile' %}" class="mobile-nav-item {% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                <i class="ti ti-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </div>
+    {% else %}
+    <div class="auth-container">
+        {% block auth_content %}{% endblock %}
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

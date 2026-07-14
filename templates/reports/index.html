@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Ledgerline{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reports-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+    .reports-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .filter-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .filter-bar select { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit; font-size: 0.875rem; }
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .summary-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; }
+    .summary-card .label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .summary-card .value { font-size: 1.5rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+    .summary-card.income .value { color: var(--color-success); }
+    .summary-card.expense .value { color: var(--color-danger); }
+    .summary-card.balance .value { color: var(--color-primary); }
+    .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .report-panel { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
+    .report-panel h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+    .chart-container { width: 100%; height: 250px; position: relative; }
+    .category-list { list-style: none; padding: 0; margin: 0; }
+    .category-list li { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); }
+    .category-list li:last-child { border-bottom: none; }
+    .category-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+    .category-name { display: flex; align-items: center; }
+    .category-amount { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+    .budget-bar { margin-bottom: 0.75rem; }
+    .budget-bar .budget-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .budget-bar .track { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+    .budget-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
+    @media (max-width: 768px) { .reports-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="reports-header">
+        <h1><i class="ti ti-chart-bar"></i> Reports</h1>
+        <form class="filter-bar" method="get">
+            <select name="month" onchange="this.form.submit()">
+                {% for m, name in month_choices %}
+                <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            <select name="year" onchange="this.form.submit()">
+                {% for y in year_choices %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+            <select name="months" onchange="this.form.submit()">
+                <option value="3" {% if months == 3 %}selected{% endif %}>3 months</option>
+                <option value="6" {% if months == 6 %}selected{% endif %}>6 months</option>
+                <option value="12" {% if months == 12 %}selected{% endif %}>12 months</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="summary-cards">
+        <div class="summary-card income">
+            <div class="label">Income ({{ month_name }})</div>
+            <div class="value">KES {{ income_total|floatformat:0 }}</div>
+        </div>
+        <div class="summary-card expense">
+            <div class="label">Expenses ({{ month_name }})</div>
+            <div class="value">KES {{ expense_total|floatformat:0 }}</div>
+        </div>
+        <div class="summary-card balance">
+            <div class="label">Balance ({{ month_name }})</div>
+            <div class="value">KES {{ balance|floatformat:0 }}</div>
+        </div>
+    </div>
+
+    <div class="reports-grid">
+        <div class="report-panel">
+            <h2>Income vs Expenses</h2>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="report-panel">
+            <h2>Monthly Spending</h2>
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+        </div>
+
+        <div class="report-panel">
+            <h2>Expense Categories</h2>
+            {% if categories %}
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="expenseCatChart"></canvas>
+            </div>
+            <ul class="category-list" style="margin-top: 1rem;">
+                {% for cat in categories %}
+                <li>
+                    <span class="category-name">
+                        <span class="category-dot" style="background: {{ cat.category__color }}"></span>
+                        {{ cat.category__name }}
+                    </span>
+                    <span class="category-amount">KES {{ cat.total|floatformat:0 }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">No expenses for this month.</div>
+            {% endif %}
+        </div>
+
+        <div class="report-panel">
+            <h2>Budget Usage</h2>
+            {% if budgets %}
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="budgetChart"></canvas>
+            </div>
+            {% for budget in budgets %}
+            <div class="budget-bar" style="margin-top: 0.75rem;">
+                <div class="budget-header">
+                    <span>{{ budget.category.name }}</span>
+                    <span>{{ budget.percentage|floatformat:0 }}%</span>
+                </div>
+                <div class="track">
+                    <div class="fill" style="width: {{ budget.percentage|floatformat:0 }}%; background: {% if budget.percentage > 100 %}var(--color-danger){% elif budget.percentage > 80 %}var(--color-warning){% else %}var(--color-success){% endif %};"></div>
+                </div>
+                <div class="budget-header" style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-secondary);">
+                    <span>KES {{ budget.spent|floatformat:0 }} spent</span>
+                    <span>KES {{ budget.remaining|floatformat:0 }} left</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">No budgets set for this month.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const trendData = {{ trend_months|safe }};
+    const trendIncome = {{ trend_income|safe }};
+    const trendExpenses = {{ trend_expenses|safe }};
+
+    // Income vs Expenses bar chart
+    new Chart(document.getElementById('trendChart'), {
+        type: 'bar',
+        data: {
+            labels: trendData,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: trendIncome,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Expenses',
+                    data: trendExpenses,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderRadius: 4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+            }
+        }
+    });
+
+    // Monthly Spending line chart
+    new Chart(document.getElementById('spendingChart'), {
+        type: 'line',
+        data: {
+            labels: trendData,
+            datasets: [{
+                label: 'Expenses',
+                data: trendExpenses,
+                borderColor: '#C2483F',
+                backgroundColor: 'rgba(194, 72, 63, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#C2483F',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => 'KES ' + v.toLocaleString() } }
+            }
+        }
+    });
+
+    // Expense category doughnut
+    var expenseCatCanvas = document.getElementById('expenseCatChart');
+    if (expenseCatCanvas) {
+        var catLabels = [{% for cat in categories %}'{{ cat.category__name }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        var catData = [{% for cat in categories %}{{ cat.total }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        var catColors = [{% for cat in categories %}'{{ cat.category__color }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        if (catLabels.length > 0) {
+            new Chart(expenseCatCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: catColors,
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }
+                }
+            });
+        }
+    }
+
+    // Budget usage doughnut
+    var budgetCanvas = document.getElementById('budgetChart');
+    if (budgetCanvas) {
+        var bLabels = [{% for b in budgets %}'{{ b.category.name }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        var bData = [{% for b in budgets %}{{ b.percentage }}{% if not forloop.last %},{% endif %}{% endfor %}];
+        var bColors = [{% for b in budgets %}'{{ b.category.color }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+        if (bLabels.length > 0) {
+            new Chart(budgetCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: bLabels,
+                    datasets: [{
+                        data: bData,
+                        backgroundColor: bColors.map(function(c) { return c + '99'; }),
+                        borderColor: bColors,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+                        tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + Math.round(ctx.raw) + '% used'; } } }
+                    }
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
